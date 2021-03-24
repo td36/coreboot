@@ -109,3 +109,11 @@ config PAYLOAD_PRELOAD
 
 	  The SoC needs to define a payload_preload_cache region where the
 	  raw payload can be placed.
+
+config UNIVERSAL_PAYLOAD_LAYER
+	bool
+	default n
+	help
+	  This option enables a standard payload layer that can be used to pass
+	  information between coreboot to payload.
+
