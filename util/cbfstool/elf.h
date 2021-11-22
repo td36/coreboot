@@ -2921,4 +2921,8 @@ typedef Elf32_Addr Elf32_Conflict;
 
 #define EM_PPC64	21		/* PowerPC 64-bit */
 
+#define UNIVERSAL_PAYLOAD_INFO_SEC_NAME                ".upld_info"
+#define UNIVERSAL_PAYLOAD_EXTRA_SEC_NAME_PREFIX        ".upld."
+#define UNIVERSAL_PAYLOAD_EXTRA_SEC_NAME_PREFIX_LENGTH (sizeof (UNIVERSAL_PAYLOAD_EXTRA_SEC_NAME_PREFIX) - 1)
+
 #endif	/* elf.h */

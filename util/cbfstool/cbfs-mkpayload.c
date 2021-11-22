@@ -93,7 +93,7 @@ int parse_elf_to_payload(const struct buffer *input, struct buffer *output,
 
 		name = (char *)(strtab + shdr[i].sh_name);
 
-		if (!strcmp(name, ".note.pinfo")) {
+		if (!strcmp(name, ".note.pinfo") || !strcmp(name, ".upld_info") || !strncmp(name, ".upld.", sizeof(".upld.") - 1)) {
 			segments++;
 			isize += (unsigned int)shdr[i].sh_size;
 		}
@@ -143,30 +143,8 @@ int parse_elf_to_payload(const struct buffer *input, struct buffer *output,
 	 * then marshal them all at once to the output.
 	 */
 	segments = 0;
+	Elf64_Addr fv_load_add = 0;
 
-	for (i = 0; i < ehdr.e_shnum; i++) {
-		char *name;
-		if (i == ehdr.e_shstrndx)
-			continue;
-
-		if (shdr[i].sh_size == 0)
-			continue;
-		name = (char *)(strtab + shdr[i].sh_name);
-		if (!strcmp(name, ".note.pinfo")) {
-			segs[segments].type = PAYLOAD_SEGMENT_PARAMS;
-			segs[segments].load_addr = 0;
-			segs[segments].len = (unsigned int)shdr[i].sh_size;
-			segs[segments].offset = doffset;
-
-			memcpy((unsigned long *)(output->data + doffset),
-			       &header[shdr[i].sh_offset], shdr[i].sh_size);
-
-			doffset += segs[segments].len;
-			osize += segs[segments].len;
-
-			segments++;
-		}
-	}
 
 	for (i = 0; i < headers; i++) {
 		if (phdr[i].p_type != PT_LOAD)
@@ -189,6 +167,7 @@ int parse_elf_to_payload(const struct buffer *input, struct buffer *output,
 			segs[segments].type = PAYLOAD_SEGMENT_DATA;
 		segs[segments].load_addr = phdr[i].p_paddr;
 		segs[segments].mem_len = phdr[i].p_memsz;
+		fv_load_add = segs[segments].load_addr + segs[segments].mem_len;
 		segs[segments].offset = doffset;
 
 		/* If the compression failed or made the section is larger,
@@ -213,6 +192,44 @@ int parse_elf_to_payload(const struct buffer *input, struct buffer *output,
 		osize += segs[segments].len;
 
 		segments++;
+	}
+
+	for (i = 0; i < ehdr.e_shnum; i++) {
+		char *name;
+		if (i == ehdr.e_shstrndx)
+			continue;
+
+		if (shdr[i].sh_size == 0)
+			continue;
+		name = (char *)(strtab + shdr[i].sh_name);
+		if (!strcmp(name, ".upld_info") || !strncmp(name, ".upld.", sizeof(".upld.") - 1)) {
+			fv_load_add = (fv_load_add + 15) & (~15);
+			segs[segments].type = PAYLOAD_SEGMENT_DATA;
+			segs[segments].load_addr = fv_load_add;
+			segs[segments].mem_len = (unsigned int)shdr[i].sh_size;
+			segs[segments].offset = doffset;
+
+			int shdr_len;
+			if (compress((char *)&header[shdr[i].sh_offset],
+					shdr[i].sh_size, output->data + doffset, &shdr_len) ||
+				(unsigned int)shdr_len > shdr[i].sh_size) {
+				WARN("Compression failed or would make the data bigger "
+					"- disabled.\n");
+				segs[segments].compression = 0;
+				segs[segments].len = shdr[i].sh_size;
+				memcpy(output->data + doffset,
+					&header[shdr[i].sh_offset], shdr[i].sh_size);
+			} else {
+				segs[segments].compression = algo;
+				segs[segments].len = shdr_len;
+			}
+
+			doffset += segs[segments].len;
+			osize += segs[segments].len;
+			fv_load_add += segs[segments].len;
+
+			segments++;
+		}
 	}
 
 	segs[segments].type = PAYLOAD_SEGMENT_ENTRY;
