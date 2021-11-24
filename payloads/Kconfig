@@ -46,6 +46,14 @@ endchoice
 
 source "payloads/external/*/Kconfig"
 
+config UNIVERSAL_PAYLOAD_ELF
+	bool "if the elf is UniversalPayload"
+	default n
+	depends on PAYLOAD_ELF
+	help
+	  This option enables a standard payload layer that can be used to pass
+	  information between coreboot to payload.
+
 config PAYLOAD_FILE
 	string "Payload path and filename"
 	depends on PAYLOAD_ELF || PAYLOAD_FIT
