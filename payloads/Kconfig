@@ -145,6 +145,22 @@ config TINT_SECONDARY_PAYLOAD
 	  tint can be loaded as a secondary payload under SeaBIOS, GRUB,
 	  or any other payload that can load additional payloads.
 
+config UNIVERSAL_SECONDARY_PAYLOAD
+	bool "Load UniversalPayload.elf as a secondary payload"
+	default n
+	depends on ARCH_X86
+	help
+	  UniversalPayload.elf can be loaded as a secondary payload under 
+	  payloads that can load additional payloads.
+
+config UNIVERSAL_PAYLOAD_OPTIONS
+	string
+	default "-l 0x1600000 -e 0x1601dbd"
+	help
+      Additional cbfstool options for the UniversalPayload. If coreboot
+	  doesn't load and decompress the secondary payload, these two values 
+	  will not be used and can be any valid non-zero values.
+
 source "payloads/external/*/Kconfig.secondary"
 
 endmenu # "Secondary Payloads"
