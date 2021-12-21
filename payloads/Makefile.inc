@@ -14,6 +14,13 @@ img/nvramcui-file := payloads/nvramcui/build/nvramcui.elf
 img/nvramcui-type := payload
 img/nvramcui-compression := $(CBFS_SECONDARY_PAYLOAD_COMPRESS_FLAG)
 
+cbfs-files-$(CONFIG_UNIVERSAL_SECONDARY_PAYLOAD) += img/UniversalPayload
+img/UniversalPayload-file := $(CONFIG_UNIVERSAL_PAYLOAD_FILE)
+img/UniversalPayload-type := flat-binary
+img/UniversalPayload-compression := $(CBFS_SECONDARY_PAYLOAD_COMPRESS_FLAG)
+UNIVERSAL_PAYLOAD_CONFIG := $(strip $(call strip_quotes,$(CONFIG_UNIVERSAL_PAYLOAD_OPTIONS)))
+img/UniversalPayload-options := $(UNIVERSAL_PAYLOAD_CONFIG)
+
 PAYLOADS_LIST=\
 payloads/coreinfo \
 payloads/nvramcui \
