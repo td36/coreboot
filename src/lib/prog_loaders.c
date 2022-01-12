@@ -143,13 +143,9 @@ void payload_preload(void)
 	cbfs_preload(global_payload.name);
 }
 
-void payload_load(void)
+static void payload_loacate_and_decompress(struct prog *payload)
 {
-	struct prog *payload = &global_payload;
 	void *mapping;
-
-	timestamp_add_now(TS_LOAD_PAYLOAD);
-
 	if (prog_locate_hook(payload))
 		goto out;
 
@@ -178,6 +174,25 @@ void payload_load(void)
 out:
 	if (prog_entry(payload) == NULL)
 		die_with_post_code(POST_INVALID_ROM, "Payload not loaded.\n");
+}
+
+static void secondary_payload_load(void)
+{
+	struct prog payload =
+	PROG_INIT(PROG_PAYLOAD, "img/UniversalPayload");
+	payload_loacate_and_decompress(&payload);
+}
+
+void payload_load(void)
+{
+	struct prog *payload = &global_payload;
+	timestamp_add_now(TS_LOAD_PAYLOAD);
+
+	payload_loacate_and_decompress(payload);
+
+#if CONFIG(UNIVERSAL_SECONDARY_PAYLOAD)
+	secondary_payload_load();
+#endif
 }
 
 void payload_run(void)
